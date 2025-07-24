@@ -33,6 +33,11 @@ void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
   mod["Brightness"] = bri;
 }
 
+#ifndef USERMOD_ID_ROTARYRACKDIMMER
+#define USERMOD_ID_ROTARYRACKDIMMER 2501
+#endif
+
+
 uint16_t Usermod_RotaryRackDimmer::getId() {
   return USERMOD_ID_ROTARYRACKDIMMER; // Dit moet in const.h gedefinieerd worden
 }
