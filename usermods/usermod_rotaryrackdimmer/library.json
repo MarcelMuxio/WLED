@@ -1,5 +1,7 @@
 {
   "name": "usermod_rotaryrackdimmer",
-  "build": { "libArchive": false },
-  "dependencies": {}
+  "version": "1.0.0",
+  "build": {
+    "libArchive": false
+  }
 }
