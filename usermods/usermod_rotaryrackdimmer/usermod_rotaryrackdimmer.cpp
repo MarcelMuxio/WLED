@@ -42,4 +42,6 @@ uint16_t Usermod_RotaryRackDimmer::getId() {
   return USERMOD_ID_ROTARYRACKDIMMER; // Dit moet in const.h gedefinieerd worden
 }
 
-REGISTER_USERMOD(Usermod_RotaryRackDimmer);
+static Usermod_RotaryRackDimmer rotaryMod;
+REGISTER_USERMOD(rotaryMod);
+
