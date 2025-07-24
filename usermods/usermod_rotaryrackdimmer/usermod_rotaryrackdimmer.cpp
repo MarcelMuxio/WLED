@@ -1,17 +1,31 @@
-#include "wled.h"
-#include "../usermods/usermod_rotaryrackdimmer/usermod_rotaryrackdimmer.h"
+#include "RotaryRackDimmer.h"
 
-Usermod* usermod_rotary = nullptr;
-
-void userSetup() {
-  usermod_rotary = new Usermod_RotaryRackDimmer();
-  usermods.add(usermod_rotary);
+void Usermod_RotaryRackDimmer::setup() {
+  pinMode(pinA, INPUT_PULLUP);
+  pinMode(pinB, INPUT_PULLUP);
+  lastState = digitalRead(pinA);
 }
 
-void userConnected() {
-  // Optioneel
+void Usermod_RotaryRackDimmer::loop() {
+  if (millis() - lastTurn < debounceDelay) return;
+
+  int currentState = digitalRead(pinA);
+  if (currentState != lastState) {
+    lastTurn = millis();
+    if (digitalRead(pinB) != currentState) {
+      bri = min(255, bri + 5); // Rechtsom
+    } else {
+      bri = max(0, bri - 5);   // Linksom
+    }
+    lastState = currentState;
+    colorUpdated(CALL_MODE_DIRECT_CHANGE);
+  }
 }
 
-void userLoop() {
-  // Optioneel, laat usermod zelf zijn werk doen
+void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
+  JsonObject user = root["u"];
+  if (!user) user = root.createNestedObject("u");
+
+  JsonObject mod = user.createNestedObject("RotaryRackDimmer");
+  mod["Brightness"] = bri;
 }
