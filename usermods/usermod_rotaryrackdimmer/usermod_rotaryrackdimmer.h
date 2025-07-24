@@ -8,10 +8,11 @@ class Usermod_RotaryRackDimmer : public Usermod {
     int lastState = 0;
     unsigned long lastTurn = 0;
     const unsigned long debounceDelay = 50;
+    bool initDone = false;
 
   public:
     void setup() override;
     void loop() override;
     void addToJsonInfo(JsonObject &root) override;
-    String getId() override { return F("RotaryRackDimmer"); }
+    uint16_t getId() override;
 };
