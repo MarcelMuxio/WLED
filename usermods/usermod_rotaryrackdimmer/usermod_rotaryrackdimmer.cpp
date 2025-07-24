@@ -1,4 +1,4 @@
-#include "RotaryRackDimmer.h"
+#include "usermod_rotaryrackdimmer.h"
 
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
