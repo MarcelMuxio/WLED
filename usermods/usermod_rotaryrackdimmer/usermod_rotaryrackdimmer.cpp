@@ -1,7 +1,4 @@
 #include "usermod_rotaryrackdimmer.h"
-#include "wled.h"
-
-extern CRGB col[];  // Nodig om directe toegang tot LED-kleuren te krijgen
 
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
@@ -25,8 +22,8 @@ void Usermod_RotaryRackDimmer::loop() {
       if (colorMode) {
         // Wissel tussen wit en blauw
         CRGB newColor = dir ? CRGB::White : CRGB::Blue;
-        col[0] = newColor;
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
+        color = newColor;
+colorUpdated(CALL_MODE_DIRECT_CHANGE);
       } else {
         // Dimmen: grotere stappen (15 ipv 5)
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
@@ -39,9 +36,8 @@ void Usermod_RotaryRackDimmer::loop() {
   // Drukknop voor wisselen van modus
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
-    colorMode = !colorMode;  // Wissel modus
-  }
-  lastButtonState = currentButtonState;
+setColor(0, RGBW32(newColor.r, newColor.g, newColor.b, 0), 0);
+colorUpdated(CALL_MODE_DIRECT_CHANGE);
 }
 
 void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
