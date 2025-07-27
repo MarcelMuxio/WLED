@@ -12,43 +12,52 @@ void Usermod_RotaryRackDimmer::setup() {
 void Usermod_RotaryRackDimmer::loop() {
   if (!initDone || strip.isUpdating()) return;
 
+  // Rotary encoder draaien
   if (millis() - lastTurn > debounceDelay) {
     int currentState = digitalRead(pinA);
     if (currentState != lastState) {
       lastTurn = millis();
       bool dir = digitalRead(pinB) != currentState;
-      WS2812FX::Segment& seg = strip.getSegment(0);
+
       if (colorMode) {
-        // Wissel tussen wit en blauw
-        seg.colors[0] = dir ? 0xFFFFFF : 0x0000FF;
+        // Preset-wissel tussen wit (1) en blauw (2)
+        applyPreset(dir ? 1 : 2);
       } else {
-        // Dimmen via bri (die WLED verwerkt) of pseudokleur aanpassen
+        // Dimmen in grotere stappen
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
-        // seg.colors[0] = bepaal op basis van kleur + brightness
+        colorUpdated(CALL_MODE_DIRECT_CHANGE);
       }
+
       lastState = currentState;
-      colorUpdated(CALL_MODE_DIRECT_CHANGE);
     }
   }
 
+  // Drukknop indrukken om modus te wisselen
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
-    colorMode = !colorMode;
+    colorMode = !colorMode;  // Wissel tussen dim/kleurmodus
   }
   lastButtonState = currentButtonState;
 }
 
 void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
   JsonObject user = root["u"];
-  if (user.isNull()) user = root.createNestedObject("u");
+  if (!user) user = root.createNestedObject("u");
+
   JsonObject mod = user.createNestedObject("RotaryRackDimmer");
   mod["Brightness"] = bri;
-  mod["Mode"] = colorMode ? "Color" : "Dim";
+  mod["Mode"] = colorMode ? "Color (preset)" : "Dim";
 }
+
+// Unieke ID voor deze usermod
+#ifndef USERMOD_ID_ROTARYRACKDIMMER
+#define USERMOD_ID_ROTARYRACKDIMMER 2501
+#endif
 
 uint16_t Usermod_RotaryRackDimmer::getId() {
-  return 2501;
+  return USERMOD_ID_ROTARYRACKDIMMER;
 }
 
+// Registratie van de usermod
 static Usermod_RotaryRackDimmer rotaryMod;
 REGISTER_USERMOD(rotaryMod);
