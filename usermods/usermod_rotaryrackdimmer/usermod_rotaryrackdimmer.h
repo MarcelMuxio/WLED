@@ -3,9 +3,9 @@
 
 class Usermod_RotaryRackDimmer : public Usermod {
 private:
-  int pinA = 12;
+  int pinA = 33;
   int pinB = 13;
-  int pinButton = 14;
+  int pinButton = 2;
   int lastState = HIGH;
   bool initDone = false;
   unsigned long lastTurn = 0;
