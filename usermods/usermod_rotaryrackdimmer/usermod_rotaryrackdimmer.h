@@ -2,25 +2,25 @@
 
 #include "wled.h"
 
+#ifndef USERMOD_ID_ROTARYRACKDIMMER
+#define USERMOD_ID_ROTARYRACKDIMMER 2501
+#endif
+
 class Usermod_RotaryRackDimmer : public Usermod {
 private:
-  int pinA = 33;          // Rotary encoder CLK
-  int pinB = 13;          // Rotary encoder DT
-  int pinButton = 12;     // Drukknop van rotary encoder
-  int lastState = 0;
-  bool isColorMode = false;
-  bool lastButtonState = true;
-  unsigned long lastButtonPress = 0;
-  const unsigned long debounceDelay = 200;
-  unsigned long lastTurn = 0;
-
-  uint8_t colorIndex = 0;
-  CRGB presetColors[2] = {
-    CRGB(255, 0, 0), // Wit
-    CRGB(0, 255, 0)      // Blauw
-  };
+  int pinA = 14;         // Rotary encoder pin A
+  int pinB = 27;         // Rotary encoder pin B
+  int pinButton = 12;    // Drukknop pin
 
   bool initDone = false;
+  int lastState = HIGH;
+  unsigned long lastTurn = 0;
+  const unsigned long debounceDelay = 5;
+
+  bool modeIsDim = true; // true = dimmen, false = kleur wisselen
+  bool lastButtonState = HIGH;
+  unsigned long lastButtonPress = 0;
+  const unsigned long buttonDebounce = 200;
 
 public:
   void setup() override;
