@@ -21,11 +21,13 @@ void Usermod_RotaryRackDimmer::loop() {
       lastTurn = millis();
       bool dir = digitalRead(pinB) != currentState;
 
-      if (isColorMode) {
-        // Wissel tussen wit/blauw
-        colorIndex = 1 - colorIndex;
-        CRGB newColor = presetColors[colorIndex];
-        setColor(0, RGBW32(newColor.r, newColor.g, newColor.b, 0));
+if (isColorMode) {
+  // Wissel tussen wit/blauw
+  colorIndex = 1 - colorIndex;
+  CRGB newColor = presetColors[colorIndex];
+  col[0] = newColor;
+    colorUpdated(CALL_MODE_DIRECT_CHANGE);
+  }
       } else {
         // Dimmodus
         if (dir) {
