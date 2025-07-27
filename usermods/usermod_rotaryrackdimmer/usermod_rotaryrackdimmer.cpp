@@ -12,54 +12,43 @@ void Usermod_RotaryRackDimmer::setup() {
 void Usermod_RotaryRackDimmer::loop() {
   if (!initDone || strip.isUpdating()) return;
 
-  // Rotary encoder draaien
   if (millis() - lastTurn > debounceDelay) {
     int currentState = digitalRead(pinA);
     if (currentState != lastState) {
       lastTurn = millis();
       bool dir = digitalRead(pinB) != currentState;
-
+      WS2812FX::Segment& seg = strip.getSegment(0);
       if (colorMode) {
         // Wissel tussen wit en blauw
-        uint32_t newColor = dir ? RGBW32(255, 255, 255, 0) : RGBW32(0, 0, 255, 0);
-        strip.setColor(0, newColor, 0);  // segment 0, geen white channel
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
+        seg.colors[0] = dir ? 0xFFFFFF : 0x0000FF;
       } else {
-        // Dimmen: grotere stappen
+        // Dimmen via bri (die WLED verwerkt) of pseudokleur aanpassen
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
+        // seg.colors[0] = bepaal op basis van kleur + brightness
       }
-
       lastState = currentState;
+      colorUpdated(CALL_MODE_DIRECT_CHANGE);
     }
   }
 
-  // Drukknop voor wisselen van modus
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
-    colorMode = !colorMode;  // Wissel tussen dimmen en kleur
+    colorMode = !colorMode;
   }
   lastButtonState = currentButtonState;
 }
 
 void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
   JsonObject user = root["u"];
-  if (!user) user = root.createNestedObject("u");
-
+  if (user.isNull()) user = root.createNestedObject("u");
   JsonObject mod = user.createNestedObject("RotaryRackDimmer");
   mod["Brightness"] = bri;
   mod["Mode"] = colorMode ? "Color" : "Dim";
 }
 
-// Usermod-ID definitie indien nog niet gedefinieerd
-#ifndef USERMOD_ID_ROTARYRACKDIMMER
-#define USERMOD_ID_ROTARYRACKDIMMER 2501
-#endif
-
 uint16_t Usermod_RotaryRackDimmer::getId() {
-  return USERMOD_ID_ROTARYRACKDIMMER;
+  return 2501;
 }
 
-// Registreer de usermod bij WLED
 static Usermod_RotaryRackDimmer rotaryMod;
 REGISTER_USERMOD(rotaryMod);
