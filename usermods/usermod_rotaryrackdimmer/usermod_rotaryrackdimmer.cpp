@@ -12,7 +12,7 @@ void Usermod_RotaryRackDimmer::setup() {
 void Usermod_RotaryRackDimmer::loop() {
   if (!initDone || strip.isUpdating()) return;
 
-  // Rotary draaien
+  // Rotary encoder draaien
   if (millis() - lastTurn > debounceDelay) {
     int currentState = digitalRead(pinA);
     if (currentState != lastState) {
@@ -20,12 +20,12 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // Kleur wisselen tussen wit en blauw
+        // Wissel tussen wit en blauw
         uint32_t newColor = dir ? RGBW32(255, 255, 255, 0) : RGBW32(0, 0, 255, 0);
-        setColor(0, newColor, 0);  // eerste 0 = segment 0, laatste 0 = no white channel
+        strip.setColor(0, newColor, 0);  // segment 0, geen white channel
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
       } else {
-        // Dimmen in stappen van 15
+        // Dimmen: grotere stappen
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
       }
@@ -34,10 +34,10 @@ void Usermod_RotaryRackDimmer::loop() {
     }
   }
 
-  // Knop indrukken → wissel mode
+  // Drukknop voor wisselen van modus
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
-    colorMode = !colorMode;
+    colorMode = !colorMode;  // Wissel tussen dimmen en kleur
   }
   lastButtonState = currentButtonState;
 }
@@ -51,6 +51,7 @@ void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject &root) {
   mod["Mode"] = colorMode ? "Color" : "Dim";
 }
 
+// Usermod-ID definitie indien nog niet gedefinieerd
 #ifndef USERMOD_ID_ROTARYRACKDIMMER
 #define USERMOD_ID_ROTARYRACKDIMMER 2501
 #endif
@@ -59,6 +60,6 @@ uint16_t Usermod_RotaryRackDimmer::getId() {
   return USERMOD_ID_ROTARYRACKDIMMER;
 }
 
-// Zorg dat dit na alle functies komt!
+// Registreer de usermod bij WLED
 static Usermod_RotaryRackDimmer rotaryMod;
 REGISTER_USERMOD(rotaryMod);
