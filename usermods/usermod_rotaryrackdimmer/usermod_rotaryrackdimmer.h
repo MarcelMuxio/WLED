@@ -15,6 +15,7 @@ private:
   bool colorMode = false;       // false = dim, true = color
   float colorBlend = 0.0f;      // 0.0 = blauw, 1.0 = wit
   bool initDone = false;
+  bool serializeConfigOnNextTick = false;
 
 public:
   void setup() override;
