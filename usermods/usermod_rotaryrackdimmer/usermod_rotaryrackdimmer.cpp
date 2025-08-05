@@ -1,4 +1,5 @@
 #include "usermod_rotaryrackdimmer.h"
+#include <FastLED.h>  // voor CRGB en blending
 
 #ifndef USERMOD_ID_ROTARYRACKDIMMER
 #define USERMOD_ID_ROTARYRACKDIMMER 2501
@@ -11,8 +12,9 @@ void Usermod_RotaryRackDimmer::setup() {
   lastState = digitalRead(pinA);
   lastButtonState = digitalRead(pinButton);
 
-  // Beginstand: kleur blauw
-  strip.getSegment(0).colors[0] = RGBW32(0, 0, 255, 0);
+  // Beginstand: kleur tussen blauw en wit gebaseerd op opgeslagen blendwaarde
+  CRGB startColor = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
+  strip.getSegment(0).colors[0] = RGBW32(startColor.r, startColor.g, startColor.b, 0);
   colorUpdated(CALL_MODE_INIT);
 
   initDone = true;
@@ -28,12 +30,10 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // Draairichting: rechtsom meer blauw, linksom meer wit
+        // Draairichting: rechtsom = richting blauw, linksom = richting wit
         colorBlend = constrain(colorBlend + (dir ? -0.05f : 0.05f), 0.0f, 1.0f);
-        byte r = colorBlend * 255;
-        byte g = colorBlend * 255;
-        byte b = 255 - (colorBlend * 255);
-        strip.getSegment(0).colors[0] = RGBW32(r, g, b, 0);
+        CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
+        strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
         serializeConfigOnNextTick = true;
       } else {
@@ -57,8 +57,8 @@ void Usermod_RotaryRackDimmer::loop() {
 
   // Config opslaan als nodig
   if (serializeConfigOnNextTick) {
-DynamicJsonDocument doc(1024);
-JsonObject cfg = doc.to<JsonObject>();
+    DynamicJsonDocument doc(1024);
+    JsonObject cfg = doc.to<JsonObject>();
     addToConfig(cfg);
     serializeConfig(cfg);
     serializeConfigOnNextTick = false;
@@ -79,7 +79,6 @@ uint16_t Usermod_RotaryRackDimmer::getId() {
   return USERMOD_ID_ROTARYRACKDIMMER;
 }
 
-// Config uitlezen bij opstarten
 bool Usermod_RotaryRackDimmer::readFromConfig(JsonObject& root) {
   JsonObject top = root[F("RotaryRackDimmer")];
   bool configComplete = !top.isNull();
@@ -91,7 +90,6 @@ bool Usermod_RotaryRackDimmer::readFromConfig(JsonObject& root) {
   return configComplete;
 }
 
-// Config opslaan
 void Usermod_RotaryRackDimmer::addToConfig(JsonObject& root) {
   JsonObject top = root.createNestedObject(F("RotaryRackDimmer"));
   top["brightness"] = bri;
