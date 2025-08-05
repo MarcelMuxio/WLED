@@ -54,4 +54,46 @@ void Usermod_RotaryRackDimmer::loop() {
   // Opslaan als nodig
   if (serializeConfigOnNextTick) {
     DynamicJsonDocument doc(1024);
-    JsonObject cfg
+    JsonObject cfg = doc.to<JsonObject>();
+    addToConfig(cfg);
+    serializeConfig(cfg);
+    serializeConfigOnNextTick = false;
+  }
+}
+
+void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject& root) {
+  JsonObject user = root["u"];
+  if (!user) user = root.createNestedObject("u");
+
+  JsonObject mod = user.createNestedObject("RotaryRackDimmer");
+  mod["Brightness"] = bri;
+  mod["Blend"] = blendAmount;
+}
+
+uint16_t Usermod_RotaryRackDimmer::getId() {
+  return USERMOD_ID_ROTARYRACKDIMMER;
+}
+
+bool Usermod_RotaryRackDimmer::readFromConfig(JsonObject& root) {
+  JsonObject top = root[F("RotaryRackDimmer")];
+  bool configComplete = !top.isNull();
+
+  configComplete &= getJsonValue(top["brightness"], bri);
+  configComplete &= getJsonValue(top["blend"], blendAmount);
+
+  if (configComplete) {
+    applyBlendedColor();  // Pas kleur toe bij opstart
+  }
+
+  return configComplete;
+}
+
+void Usermod_RotaryRackDimmer::addToConfig(JsonObject& root) {
+  JsonObject top = root.createNestedObject(F("RotaryRackDimmer"));
+  top["brightness"] = bri;
+  top["blend"] = blendAmount;
+}
+
+// Registratie
+static Usermod_RotaryRackDimmer rotaryMod;
+REGISTER_USERMOD(rotaryMod);
