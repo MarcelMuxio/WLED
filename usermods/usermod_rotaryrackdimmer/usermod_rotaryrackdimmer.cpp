@@ -1,4 +1,5 @@
 #include "usermod_rotaryrackdimmer.h"
+extern CRGB col[];
 
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
