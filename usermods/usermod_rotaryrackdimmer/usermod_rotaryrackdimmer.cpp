@@ -1,5 +1,9 @@
 #include "usermod_rotaryrackdimmer.h"
 
+#ifndef USERMOD_ID_ROTARYRACKDIMMER
+#define USERMOD_ID_ROTARYRACKDIMMER 2501
+#endif
+
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
   pinMode(pinB, INPUT_PULLUP);
@@ -53,8 +57,8 @@ void Usermod_RotaryRackDimmer::loop() {
 
   // Config opslaan als nodig
   if (serializeConfigOnNextTick) {
-    JsonDocument doc;
-    JsonObject cfg = doc.to<JsonObject>();
+DynamicJsonDocument doc(1024);
+JsonObject cfg = doc.to<JsonObject>();
     addToConfig(cfg);
     serializeConfig(cfg);
     serializeConfigOnNextTick = false;
