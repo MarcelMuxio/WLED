@@ -1,5 +1,4 @@
 #include "usermod_rotaryrackdimmer.h"
-extern CRGB col[];
 
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
@@ -9,7 +8,7 @@ void Usermod_RotaryRackDimmer::setup() {
   lastButtonState = digitalRead(pinButton);
 
   // Startkleur blauw
-  col[0] = RGBW32(0, 0, 255, 0);
+  strip.getSegment(0).colors[0] = RGBW32(0, 0, 255, 0);
   colorBlend = 0.0f;
 
   initDone = true;
@@ -31,7 +30,7 @@ void Usermod_RotaryRackDimmer::loop() {
         byte r = colorBlend * 255;
         byte g = colorBlend * 255;
         byte b = 255 - (colorBlend * 255);
-        col[0] = RGBW32(r, g, b, 0);
+        strip.getSegment(0).colors[0] = RGBW32(r, g, b, 0);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
       } else {
         // Dimmen (rechtsom = feller)
