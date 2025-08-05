@@ -7,9 +7,9 @@ void Usermod_RotaryRackDimmer::setup() {
   lastState = digitalRead(pinA);
   lastButtonState = digitalRead(pinButton);
 
-  // Startkleur blauw
+  // Beginstand: kleur blauw
   strip.getSegment(0).colors[0] = RGBW32(0, 0, 255, 0);
-  colorBlend = 0.0f;
+  colorUpdated(CALL_MODE_INIT);
 
   initDone = true;
 }
@@ -17,7 +17,6 @@ void Usermod_RotaryRackDimmer::setup() {
 void Usermod_RotaryRackDimmer::loop() {
   if (!initDone || strip.isUpdating()) return;
 
-  // Rotary encoder draaien
   if (millis() - lastTurn > debounceDelay) {
     int currentState = digitalRead(pinA);
     if (currentState != lastState) {
@@ -25,41 +24,41 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // Langzaam overgaan tussen blauw (rechts) en wit (links)
+        // Draairichting: rechtsom meer blauw, linksom meer wit
         colorBlend = constrain(colorBlend + (dir ? -0.05f : 0.05f), 0.0f, 1.0f);
         byte r = colorBlend * 255;
         byte g = colorBlend * 255;
         byte b = 255 - (colorBlend * 255);
         strip.getSegment(0).colors[0] = RGBW32(r, g, b, 0);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
-
-        // Kleur opslaan
-        DynamicJsonDocument doc(JSON_BUFFER_SIZE);
-        serializeConfig(doc.to<JsonObject>());
+        serializeConfigOnNextTick = true;
       } else {
         // Dimmen (rechtsom = feller)
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
-
-        // Helderheid opslaan
-        DynamicJsonDocument doc(JSON_BUFFER_SIZE);
-        serializeConfig(doc.to<JsonObject>());
+        serializeConfigOnNextTick = true;
       }
 
       lastState = currentState;
     }
   }
 
-  // Drukknop voor modus wisselen
+  // Modus wisselen
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
     colorMode = !colorMode;
-
-    // Modus opslaan
-    DynamicJsonDocument doc(JSON_BUFFER_SIZE);
-    serializeConfig(doc.to<JsonObject>());
+    serializeConfigOnNextTick = true;
   }
   lastButtonState = currentButtonState;
+
+  // Config opslaan als nodig
+  if (serializeConfigOnNextTick) {
+    JsonDocument doc;
+    JsonObject cfg = doc.to<JsonObject>();
+    addToConfig(cfg);
+    serializeConfig(cfg);
+    serializeConfigOnNextTick = false;
+  }
 }
 
 void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject& root) {
@@ -72,13 +71,30 @@ void Usermod_RotaryRackDimmer::addToJsonInfo(JsonObject& root) {
   mod["Blend"] = colorBlend;
 }
 
-#ifndef USERMOD_ID_ROTARYRACKDIMMER
-#define USERMOD_ID_ROTARYRACKDIMMER 2501
-#endif
-
 uint16_t Usermod_RotaryRackDimmer::getId() {
   return USERMOD_ID_ROTARYRACKDIMMER;
 }
 
+// Config uitlezen bij opstarten
+bool Usermod_RotaryRackDimmer::readFromConfig(JsonObject& root) {
+  JsonObject top = root[F("RotaryRackDimmer")];
+  bool configComplete = !top.isNull();
+
+  configComplete &= getJsonValue(top["brightness"], bri);
+  configComplete &= getJsonValue(top["blend"], colorBlend);
+  configComplete &= getJsonValue(top["mode"], colorMode);
+
+  return configComplete;
+}
+
+// Config opslaan
+void Usermod_RotaryRackDimmer::addToConfig(JsonObject& root) {
+  JsonObject top = root.createNestedObject(F("RotaryRackDimmer"));
+  top["brightness"] = bri;
+  top["blend"] = colorBlend;
+  top["mode"] = colorMode;
+}
+
+// Registratie bij WLED
 static Usermod_RotaryRackDimmer rotaryMod;
 REGISTER_USERMOD(rotaryMod);
