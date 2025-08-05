@@ -8,7 +8,8 @@ void Usermod_RotaryRackDimmer::setup() {
   lastButtonState = digitalRead(pinButton);
 
   // Startkleur blauw
-  strip.getSegment(0).colors[0] = RGBW32(0, 0, 255, 0);
+  strip.setColor(0, RGBW32(0, 0, 255, 0));
+  strip.setMode(0, FX_MODE_STATIC);
   colorBlend = 0.0f;
 
   initDone = true;
@@ -25,19 +26,19 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // Langzaam overgaan tussen blauw (rechts) en wit (links)
+        // Langzaam overgaan tussen blauw en wit
         colorBlend = constrain(colorBlend + (dir ? -0.05f : 0.05f), 0.0f, 1.0f);
         byte r = colorBlend * 255;
         byte g = colorBlend * 255;
         byte b = 255 - (colorBlend * 255);
-        strip.getSegment(0).colors[0] = RGBW32(r, g, b, 0);
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
+        strip.setColor(0, RGBW32(r, g, b, 0));
+        strip.setMode(0, FX_MODE_STATIC);
       } else {
         // Dimmen (rechtsom = feller)
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
       }
 
+      stateUpdated(CALL_MODE_BUTTON);  // Dit slaat helderheid + kleur op
       lastState = currentState;
     }
   }
