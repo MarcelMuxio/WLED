@@ -1,5 +1,5 @@
 #include "usermod_rotaryrackdimmer.h"
-#include <FastLED.h>  // voor CRGB en blending
+#include <FastLED.h>  // ✅ Voor CRGB & blend
 
 #ifndef USERMOD_ID_ROTARYRACKDIMMER
 #define USERMOD_ID_ROTARYRACKDIMMER 2501
@@ -12,11 +12,13 @@ void Usermod_RotaryRackDimmer::setup() {
   lastState = digitalRead(pinA);
   lastButtonState = digitalRead(pinButton);
 
-  // Beginstand: kleur tussen blauw en wit gebaseerd op opgeslagen blendwaarde
-  CRGB startColor = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
-  strip.getSegment(0).colors[0] = RGBW32(startColor.r, startColor.g, startColor.b, 0);
-  colorUpdated(CALL_MODE_INIT);
+  // ✅ Pas blendkleur toe op basis van opgeslagen waarde
+  if (colorMode) {
+    CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
+    strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
+  }
 
+  colorUpdated(CALL_MODE_INIT);
   initDone = true;
 }
 
@@ -30,14 +32,14 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // Draairichting: rechtsom = richting blauw, linksom = richting wit
+        // ✅ Kleurmodus – blend tussen blauw en wit
         colorBlend = constrain(colorBlend + (dir ? -0.05f : 0.05f), 0.0f, 1.0f);
         CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
         strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);
+        colorUpdated(CALL_MODE_DIRECT_CHANGE);  // ✅ Zorg dat kleur permanent toegepast wordt
         serializeConfigOnNextTick = true;
       } else {
-        // Dimmen (rechtsom = feller)
+        // Dimmen
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
         serializeConfigOnNextTick = true;
@@ -47,10 +49,15 @@ void Usermod_RotaryRackDimmer::loop() {
     }
   }
 
-  // Modus wisselen
+  // ✅ Modus wisselen en bij kleurmodus direct toepassen
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
     colorMode = !colorMode;
+    if (colorMode) {
+      CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
+      strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
+    }
+    colorUpdated(CALL_MODE_DIRECT_CHANGE);
     serializeConfigOnNextTick = true;
   }
   lastButtonState = currentButtonState;
