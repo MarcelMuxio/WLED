@@ -1,9 +1,15 @@
 #include "usermod_rotaryrackdimmer.h"
-#include <FastLED.h>  // ✅ Voor CRGB & blend
+#include <FastLED.h>
 
 #ifndef USERMOD_ID_ROTARYRACKDIMMER
 #define USERMOD_ID_ROTARYRACKDIMMER 2501
 #endif
+
+void Usermod_RotaryRackDimmer::applyColorFromBlend() {
+  CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
+  strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
+  colorUpdated(CALL_MODE_DIRECT_CHANGE);
+}
 
 void Usermod_RotaryRackDimmer::setup() {
   pinMode(pinA, INPUT_PULLUP);
@@ -12,13 +18,13 @@ void Usermod_RotaryRackDimmer::setup() {
   lastState = digitalRead(pinA);
   lastButtonState = digitalRead(pinButton);
 
-  // ✅ Pas blendkleur toe op basis van opgeslagen waarde
-  if (colorMode) {
-    CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
-    strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
-  }
+  // Pas kleur toe op basis van opgeslagen blendwaarde
+  applyColorFromBlend();
 
+  // Pas helderheid toe vanuit config
+  bri = constrain(bri, 0, 255);
   colorUpdated(CALL_MODE_INIT);
+
   initDone = true;
 }
 
@@ -32,14 +38,10 @@ void Usermod_RotaryRackDimmer::loop() {
       bool dir = digitalRead(pinB) != currentState;
 
       if (colorMode) {
-        // ✅ Kleurmodus – blend tussen blauw en wit
         colorBlend = constrain(colorBlend + (dir ? -0.05f : 0.05f), 0.0f, 1.0f);
-        CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
-        strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
-        colorUpdated(CALL_MODE_DIRECT_CHANGE);  // ✅ Zorg dat kleur permanent toegepast wordt
+        applyColorFromBlend();
         serializeConfigOnNextTick = true;
       } else {
-        // Dimmen
         bri = constrain(bri + (dir ? 15 : -15), 0, 255);
         colorUpdated(CALL_MODE_DIRECT_CHANGE);
         serializeConfigOnNextTick = true;
@@ -49,20 +51,19 @@ void Usermod_RotaryRackDimmer::loop() {
     }
   }
 
-  // ✅ Modus wisselen en bij kleurmodus direct toepassen
+  // Modus wisselen met knop
   bool currentButtonState = digitalRead(pinButton);
   if (currentButtonState != lastButtonState && currentButtonState == LOW) {
     colorMode = !colorMode;
     if (colorMode) {
-      CRGB blended = blend(CRGB::Blue, CRGB::White, uint8_t(colorBlend * 255));
-      strip.getSegment(0).colors[0] = RGBW32(blended.r, blended.g, blended.b, 0);
+      applyColorFromBlend();
+    } else {
+      colorUpdated(CALL_MODE_DIRECT_CHANGE);  // voor helderheid
     }
-    colorUpdated(CALL_MODE_DIRECT_CHANGE);
     serializeConfigOnNextTick = true;
   }
   lastButtonState = currentButtonState;
 
-  // Config opslaan als nodig
   if (serializeConfigOnNextTick) {
     DynamicJsonDocument doc(1024);
     JsonObject cfg = doc.to<JsonObject>();
@@ -93,6 +94,11 @@ bool Usermod_RotaryRackDimmer::readFromConfig(JsonObject& root) {
   configComplete &= getJsonValue(top["brightness"], bri);
   configComplete &= getJsonValue(top["blend"], colorBlend);
   configComplete &= getJsonValue(top["mode"], colorMode);
+
+  // Zolang config niet compleet is, geen kleur toepassen
+  if (configComplete && colorMode) {
+    applyColorFromBlend();
+  }
 
   return configComplete;
 }
